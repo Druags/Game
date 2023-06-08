@@ -3,6 +3,7 @@ from settings import *
 from support import *
 from timer import Timer
 
+
 class Player(pygame.sprite.Sprite):
     def __init__(self, pos, group):
         super().__init__(group)
@@ -21,14 +22,27 @@ class Player(pygame.sprite.Sprite):
 
         # таймеры
         self.timers = {
-            'tool_use': Timer(350, self.use_tool)
+            'tool_use': Timer(350, self.use_tool),
+            'tool_switch': Timer(200),
+            'seed_use': Timer(350, self.use_seed),
+            'seed_switch': Timer(200),
         }
 
         # инструменты
-        self.selected_tool = 'axe'
+        self.tools = ['hoe', 'axe', 'water']
+        self.tool_index = 0
+        self.selected_tool = self.tools[self.tool_index]
+
+        # семена
+        self.seeds = ['corn', 'tomato']
+        self.seed_index = 0
+        self.selected_seed = self.seeds[self.seed_index]
 
     def use_tool(self):
-        print(self.selected_tool)
+        pass
+
+    def use_seed(self):
+        pass
 
     def import_assets(self):
         self.animations = {'up': [], 'down': [], 'left': [], 'right': [],
@@ -72,6 +86,31 @@ class Player(pygame.sprite.Sprite):
             if keys[pygame.K_SPACE]:
                 self.timers['tool_use'].activate()
                 self.direction = pygame.math.Vector2()
+                self.frame_index = 0
+
+            # смена инструмента
+            if keys[pygame.K_q] and not self.timers['tool_switch'].active:
+                self.timers['tool_switch'].activate()
+                self.tool_index += 1
+                self.tool_index = self.tool_index if self.tool_index < len(self.tools) else 0
+                print(self.tool_index)
+                self.selected_tool = self.tools[self.tool_index]
+
+            # использование семян
+            if keys[pygame.K_LCTRL]:
+                self.timers['seed_use'].activate()
+                self.direction = pygame.math.Vector2()
+                self.frame_index = 0
+
+            # смена семян
+
+            if keys[pygame.K_e] and not self.timers['seed_switch'].active:
+                self.timers['seed_switch'].activate()
+                self.seed_index += 1
+                self.seed_index = self.seed_index if self.seed_index < len(self.seeds) else 0
+
+                print(self.seed_index)
+                self.selected_seed = self.seeds[self.seed_index]
 
     def get_status(self):
         # если игрок не двигается, добавляем _idle к его статусу
@@ -80,10 +119,13 @@ class Player(pygame.sprite.Sprite):
             self.status = self.status.split('_')[0]+'_idle'
 
         if self.timers['tool_use'].active:
-            self.timers['tool_use'].update()
             self.status = self.status.split('_')[0]+'_'+self.selected_tool
 
         # инструмент
+
+    def update_timers(self):
+        for timer in self.timers.values():
+         timer.update()
 
     def move(self, dt):
         # нормализация вектора
@@ -99,6 +141,7 @@ class Player(pygame.sprite.Sprite):
     def update(self, dt):
         self.input()
         self.get_status()
+        self.update_timers()
         self.move(dt)
         self.animate(dt)
 
