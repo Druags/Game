@@ -23,6 +23,7 @@ class Transition():
             self.player.sleep = False
             self.speed = -2
             self.reset()
+
         self.image.fill((self.color, self.color, self.color))
         self.display_surface.blit(self.image, (0,0), special_flags=pygame.BLEND_RGBA_MULT)
 

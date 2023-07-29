@@ -2,11 +2,14 @@ import pygame
 from settings import *
 from player import Player
 from overlay import Overlay
-from sprites import Generic, Water, WildFlower, Tree, Interaction
+from sprites import Generic, Water, WildFlower, Tree, Interaction, Particle
 from transition import Transition
 from pytmx.util_pygame import load_pygame
 from support import *
 from soil import SoilLayer
+from sky import Rain, Sky
+from random import randint
+
 
 class Level:
     def __init__(self):
@@ -19,12 +22,17 @@ class Level:
         self.collision_sprites = pygame.sprite.Group()
         self.tree_sprites = pygame.sprite.Group()
         self.interaction_sprites = pygame.sprite.Group()
-        self.soil = SoilLayer(all_sprites=self.all_sprites)
+        self.soil_layer = SoilLayer(self.all_sprites, self.collision_sprites)
+
+        # небо
+        self.sky = Sky()
+        self.rain = Rain(self.all_sprites)
+        self.raining = True if randint(0, 10) > 3 else False
+        self.soil_layer.raining = self.raining
 
         self.setup()
         self.overlay = Overlay(self.player)
         self.transition = Transition(self.reset, self.player)
-
 
     def setup(self):
         tmx_data = load_pygame('../data/map.tmx')
@@ -71,7 +79,7 @@ class Level:
                                      collision_sprites=self.collision_sprites,
                                      tree_sprites=self.tree_sprites,
                                      interaction=self.interaction_sprites,
-                                     soil_layer=self.soil
+                                     soil_layer=self.soil_layer
                                      )
             if obj.name == 'Bed':
                 Interaction(pos=(obj.x, obj.y),
@@ -87,21 +95,56 @@ class Level:
             z=LAYERS['ground'])
 
     def reset(self):
+        self.soil_layer.update_plants()
+
+        # почва
+        self.soil_layer.remove_water()
+
+        # дождь
+        self.raining = True if randint(0, 10) > 3 else False
+        self.soil_layer.raining = self.raining
+        if self.raining:
+            self.soil_layer.water_all()
+
         # яблоки на деревьях
 
         for tree in self.tree_sprites.sprites():
-            for apple in tree.apple_sprites.sprites():
-                apple.kill()
-            tree.create_fruit()
+            if hasattr(tree, 'apple_sprites'):
+                for apple in tree.apple_sprites.sprites():
+                    apple.kill()
+                tree.create_fruit()
+
+        self.sky.start_color = [255, 255, 255]
 
     def player_add(self, item):
         self.player.item_inventory[item] += 1
+
+    def plant_collision(self):
+        if self.soil_layer.plant_sprites:
+            for plant in self.soil_layer.plant_sprites.sprites():
+                if plant.harvestable and plant.rect.colliderect(self.player.hitbox):
+                    self.player_add(plant.plant_type)
+                    plant.kill()
+                    Particle(plant.rect.topleft, plant.image, self.all_sprites, LAYERS['main'])
+                    row = plant.rect.centerx // TILE_SIZE
+                    col = plant.rect.centery // TILE_SIZE
+                    self.soil_layer.grid[row][col].remove('P')
 
     def run(self, dt):
         self.display_surface.fill('black')
         self.all_sprites.custom_draw(self.player)
         self.all_sprites.update(dt)
+
+        self.plant_collision()
+
         self.overlay.display()
+
+        #  дождь
+        if self.raining:
+            self.rain.update()
+
+        self.sky.display(dt)
+
         if self.player.sleep:
             self.transition.play()
 
