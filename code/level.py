@@ -34,6 +34,8 @@ class Level:
         self.overlay = Overlay(self.player)
         self.transition = Transition(self.reset, self.player)
 
+        self.shop_active = False
+
     def setup(self):
         tmx_data = load_pygame('../data/map.tmx')
 
@@ -79,9 +81,17 @@ class Level:
                                      collision_sprites=self.collision_sprites,
                                      tree_sprites=self.tree_sprites,
                                      interaction=self.interaction_sprites,
-                                     soil_layer=self.soil_layer
+                                     soil_layer=self.soil_layer,
+                                     toggle_shop=self.toggle_shop
                                      )
             if obj.name == 'Bed':
+                Interaction(pos=(obj.x, obj.y),
+                            size=(obj.width, obj.height),
+                            groups=self.interaction_sprites,
+                            name=obj.name
+                            )
+
+            if obj.name == 'Trader':
                 Interaction(pos=(obj.x, obj.y),
                             size=(obj.width, obj.height),
                             groups=self.interaction_sprites,
@@ -118,6 +128,9 @@ class Level:
 
     def player_add(self, item):
         self.player.item_inventory[item] += 1
+
+    def toggle_shop(self):
+        self.shop_active = not self.shop_active
 
     def plant_collision(self):
         if self.soil_layer.plant_sprites:
