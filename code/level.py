@@ -9,6 +9,7 @@ from support import *
 from soil import SoilLayer
 from sky import Rain, Sky
 from random import randint
+from menu import Menu
 
 
 class Level:
@@ -34,6 +35,7 @@ class Level:
         self.overlay = Overlay(self.player)
         self.transition = Transition(self.reset, self.player)
 
+        self.menu = Menu(self.player, self.toggle_shop)
         self.shop_active = False
 
     def setup(self):
@@ -146,14 +148,17 @@ class Level:
     def run(self, dt):
         self.display_surface.fill('black')
         self.all_sprites.custom_draw(self.player)
-        self.all_sprites.update(dt)
 
-        self.plant_collision()
+        if self.shop_active:
+            self.menu.update()
+        else:
+            self.all_sprites.update(dt)
+            self.plant_collision()
 
         self.overlay.display()
 
         #  дождь
-        if self.raining:
+        if self.raining and not self.shop_active:
             self.rain.update()
 
         self.sky.display(dt)
