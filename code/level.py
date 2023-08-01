@@ -28,7 +28,7 @@ class Level:
         # небо
         self.sky = Sky()
         self.rain = Rain(self.all_sprites)
-        self.raining = True if randint(0, 10) > 3 else False
+        self.raining = randint(0, 10) > 7
         self.soil_layer.raining = self.raining
 
         self.setup()
@@ -37,6 +37,15 @@ class Level:
 
         self.menu = Menu(self.player, self.toggle_shop)
         self.shop_active = False
+
+        self.success = pygame.mixer.Sound('../audio/success.wav')
+        self.success.set_volume(0.2)
+
+
+        self.bg_music = pygame.mixer.Sound('../audio/bg.mp3')
+        self.bg_music.set_volume(0.2)
+        self.bg_music.play(loops=-1)
+
 
     def setup(self):
         tmx_data = load_pygame('../data/map.tmx')
@@ -129,6 +138,7 @@ class Level:
         self.sky.start_color = [255, 255, 255]
 
     def player_add(self, item):
+        self.success.play()
         self.player.item_inventory[item] += 1
 
     def toggle_shop(self):

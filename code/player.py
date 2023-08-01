@@ -65,6 +65,9 @@ class Player(pygame.sprite.Sprite):
 
         self.toggle_shop = toggle_shop
 
+        self.watering = pygame.mixer.Sound('../audio/water.mp3')
+        self.watering.set_volume(0.2)
+
     def get_target_position(self):
         self.target_position = self.rect.center + PLAYER_TOOL_OFFSET[self.status.split('_')[0]]
 
@@ -75,8 +78,10 @@ class Player(pygame.sprite.Sprite):
         elif self.selected_tool == 'axe':
             for tree in self.tree_sprites.sprites():
                 if tree.rect.collidepoint(self.target_position):
-                    tree.damage()
+                    if hasattr(tree, 'damage'):
+                        tree.damage()
         elif self.selected_tool == 'water':
+            self.watering.play()
             self.soil_layer.water(self.target_position)
 
     def use_seed(self):
@@ -152,6 +157,7 @@ class Player(pygame.sprite.Sprite):
                 self.selected_seed = self.seeds[self.seed_index]
 
             if keys[pygame.K_RETURN]:
+                self.toggle_shop()
                 collided_interaction_sprite = pygame.sprite.spritecollide(sprite=self,
                                                                           group=self.interaction,
                                                                           dokill=False)
